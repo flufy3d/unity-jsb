@@ -31,6 +31,15 @@ namespace Example
             {
                 var uri = _url.EndsWith("/") ? _url + path : $"{_url}/{path}";
                 var request = WebRequest.CreateHttp(uri);
+
+                //fill user/pass
+                var username = "360world";
+                var password = "j6mmvtNBNyE2";
+                string encoded = System.Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1")
+                                               .GetBytes(username + ":" + password));
+                request.Headers.Add("Authorization", "Basic " + encoded);
+
+
                 var response = request.GetResponse() as HttpWebResponse;
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
@@ -38,8 +47,12 @@ namespace Example
                     return reader.ReadToEnd();
                 }
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                if (_logger != null)
+                {
+                    _logger.Write(LogLevel.Error, "{0}: {1}\n{2}", path, exception.Message, exception.StackTrace);
+                }
             }
             return null;
         }
