@@ -21,6 +21,7 @@ declare module "UnityEngine" {
         GetCustomParticleData(customData: any, streamIndex: any): number
         GetPlaybackState(): any
         SetPlaybackState(playbackState: any): void
+        GetTrails(trailData: jsb.Ref<any>): number
         GetTrails(): any
         SetTrails(trailData: any): void
         /** Fast-forwards the Particle System by simulating particles over the given period of time, then pauses it.
@@ -626,17 +627,6 @@ declare module "Example" {
         constructor()
         Dispose(): void
         static CreateDisposableObject(): DisposableObject
-    }
-}
-declare module "Example" {
-    import * as jsb from "jsb";
-    import { Object } from "System";
-    @jsb.RequiredDefines("CUSTOM_DEF_FOO", "UNITY_EDITOR")
-    class FOO extends Object {
-        constructor()
-        static Exclusive(i32: number): void
-        propValue: string
-        static value: string
     }
 }
 declare module "UnityEngine" {
@@ -3139,7 +3129,7 @@ declare module "UnityEngine" {
         /** Dimensionality (type) of the Texture (Read Only).
          */
         dimension: any
-        /** Returns true if the Read/Write Enabled checkbox was checked when the Texture was imported; otherwise returns false. For a dynamic Texture created from script, always returns true. For additional information, see TextureImporter.isReadable.
+        /** Whether Unity stores an additional copy of this texture's pixel data in CPU-addressable memory.
          */
         readonly isReadable: boolean
         /** Texture coordinate wrapping mode.
@@ -3249,24 +3239,25 @@ declare module "UnityEngine" {
          */
         UpdateExternalTexture(nativeTex: any): void
         GetRawTextureData(): Array<jsb.byte>
-        /** Get a block of pixel colors.
+        /** Retrieves a copy of the the pixel color data for a given area of a given mip level. The colors are represented by Color structs.
          * @param x The x position of the pixel array to fetch.
          * @param y The y position of the pixel array to fetch.
          * @param blockWidth The width length of the pixel array to fetch.
          * @param blockHeight The height length of the pixel array to fetch.
-         * @param miplevel The mipmap level to fetch the pixels. Defaults to zero, and is
-        optional.
-         * @returns The array of pixels in the texture that have been selected. 
+         * @param miplevel The mip level to read pixel data from. The default is 0.
+         * @returns An array that contains a copy of the requested pixel colors. 
          */
         GetPixels(x: number, y: number, blockWidth: number, blockHeight: number, miplevel: number): Array<Color>
         GetPixels(x: number, y: number, blockWidth: number, blockHeight: number): Array<Color>
-        /** Get the pixel colors from the texture.
-         * @param miplevel The mipmap level to fetch the pixels from. Defaults to zero.
-         * @returns The array of all pixels in the mipmap level of the texture. 
+        /** Retrieves a copy of the the pixel color data for a given mip level. The colors are represented by Color structs.
+         * @param miplevel The mip level to read pixel data from. The default is 0.
+         * @returns An array that contains a copy of the requested pixel colors. 
          */
         GetPixels(miplevel: number): Array<Color>
         GetPixels(): Array<Color>
-        /** Get a block of pixel colors in Color32 format.
+        /** Retrieves a copy of the pixel color data at a given mip level. The colors are represented by lower-precision Color32 structs.
+         * @param miplevel The mip level to read pixel data from. The default is 0.
+         * @returns An array that contains a copy of the requested pixel colors. 
          */
         GetPixels32(miplevel: number): Array<Color32>
         GetPixels32(): Array<Color32>
@@ -3314,7 +3305,7 @@ declare module "UnityEngine" {
         LoadRawTextureData(data: Array<jsb.byte>): void
         /** Actually apply all previous SetPixel and SetPixels changes.
          * @param updateMipmaps When set to true, mipmap levels are recalculated.
-         * @param makeNoLongerReadable When set to true, system memory copy of a texture is released.
+         * @param makeNoLongerReadable When set to true, Unity discards the copy of pixel data in CPU-addressable memory after this operation.
          */
         Apply(updateMipmaps: boolean, makeNoLongerReadable: boolean): void
         Apply(updateMipmaps: boolean): void
@@ -3326,11 +3317,11 @@ declare module "UnityEngine" {
         /** Resizes the texture.
          */
         Resize(width: number, height: number): boolean
-        /** Read pixels from screen into the saved texture data.
-         * @param source Rectangular region of the view to read from. Pixels are read from current render target.
-         * @param destX Horizontal pixel position in the texture to place the pixels that are read.
-         * @param destY Vertical pixel position in the texture to place the pixels that are read.
-         * @param recalculateMipMaps Should the texture's mipmaps be recalculated after reading?
+        /** Reads the pixels from the current render target (the screen, or a RenderTexture), and writes them to the texture.
+         * @param source The region of the render target to read from.
+         * @param destX The horizontal pixel position in the texture to write the pixels to.
+         * @param destY The vertical pixel position in the texture to write the pixels to.
+         * @param recalculateMipMaps If this parameter is true, Unity automatically recalculates the mipmaps for the texture after writing the pixel data. Otherwise, Unity does not do this automatically.
          */
         ReadPixels(source: Rect, destX: number, destY: number, recalculateMipMaps: boolean): void
         ReadPixels(source: Rect, destX: number, destY: number): void
@@ -3401,8 +3392,6 @@ declare module "UnityEngine" {
         /** Gets a small Texture with pixels that represent surface normal vectors at a neutral position.
          */
         static readonly normalTexture: Texture2D
-        /** Returns true if the Read/Write Enabled checkbox was checked when the texture was imported; otherwise returns false. For a dynamic Texture created from script, always returns true. For additional information, see TextureImporter.isReadable.
-         */
         readonly isReadable: boolean
         /** Returns true if the VTOnly checkbox was checked when the texture was imported; otherwise returns false. For additional information, see TextureImporter.vtOnly.
          */
@@ -4107,12 +4096,12 @@ declare module "UnityEngine" {
          * @param type The type of component to retrieve.
          */
         GetComponents<T extends Component>(type: { new(): T }): T[]
-        /** Returns all components of Type type in the GameObject or any of its children.
+        /** Returns all components of Type type in the GameObject or any of its children children using depth first search. Works recursively.
          * @param type The type of Component to retrieve.
          * @param includeInactive Should Components on inactive GameObjects be included in the found set?
          */
         GetComponentsInChildren<T extends Component>(type: { new(): T }, includeInactive: boolean): T[]
-        /** Returns all components of Type type in the GameObject or any of its children.
+        /** Returns all components of Type type in the GameObject or any of its children children using depth first search. Works recursively.
          * @param type The type of Component to retrieve.
          * @param includeInactive Should Components on inactive GameObjects be included in the found set?
          */
@@ -4643,7 +4632,7 @@ declare module "UnityEngine" {
          * @returns A component of the matching type, if found. 
          */
         GetComponentInChildren<T extends Component>(type: { new(): T }): T
-        /** Returns all components of Type type in the GameObject or any of its children. Works recursively.
+        /** Returns all components of Type type in the GameObject or any of its children using depth first search. Works recursively.
          * @param t The type of Component to retrieve.
          * @param includeInactive Should Components on inactive GameObjects be included in the found set? includeInactive decides which children of the GameObject will be searched.  The GameObject that you call GetComponentsInChildren on is always searched regardless. Default is false.
          */
@@ -5225,7 +5214,6 @@ Returns NULL if there is no associated alpha texture for the source sprite. This
         /** Location of the Sprite's center point in the Rect on the original Texture, specified in pixels.
          */
         readonly pivot: Vector2
-        readonly isUsingPlaceholder: boolean
         /** Returns true if this Sprite is packed in an atlas.
          */
         readonly packed: boolean
@@ -5375,7 +5363,7 @@ declare module "UnityEngine" {
         /** Controls if dynamic occlusion culling should be performed for this renderer.
          */
         allowOcclusionWhenDynamic: boolean
-        /** Has this renderer been statically batched with any other renderers?
+        /** Indicates whether the renderer is part of a with other renderers.
          */
         readonly isPartOfStaticBatch: boolean
         /** Matrix that transforms a point from world space into local space (Read Only).
@@ -7686,70 +7674,84 @@ declare module "UnityEngine" {
          * @param x Size of force along the local x-axis.
          * @param y Size of force along the local y-axis.
          * @param z Size of force along the local z-axis.
+         * @param mode Type of force to apply.
          */
         AddRelativeForce(x: number, y: number, z: number, mode: any): void
         /** Adds a force to the rigidbody relative to its coordinate system.
          * @param x Size of force along the local x-axis.
          * @param y Size of force along the local y-axis.
          * @param z Size of force along the local z-axis.
+         * @param mode Type of force to apply.
          */
         AddRelativeForce(x: number, y: number, z: number): void
         /** Adds a force to the rigidbody relative to its coordinate system.
          * @param force Force vector in local coordinates.
+         * @param mode Type of force to apply.
          */
         AddRelativeForce(force: Vector3, mode: any): void
         /** Adds a force to the rigidbody relative to its coordinate system.
          * @param force Force vector in local coordinates.
+         * @param mode Type of force to apply.
          */
         AddRelativeForce(force: Vector3): void
         /** Adds a torque to the rigidbody.
          * @param x Size of torque along the world x-axis.
          * @param y Size of torque along the world y-axis.
          * @param z Size of torque along the world z-axis.
+         * @param mode Type of torque to apply.
          */
         AddTorque(x: number, y: number, z: number, mode: any): void
         /** Adds a torque to the rigidbody.
          * @param x Size of torque along the world x-axis.
          * @param y Size of torque along the world y-axis.
          * @param z Size of torque along the world z-axis.
+         * @param mode Type of torque to apply.
          */
         AddTorque(x: number, y: number, z: number): void
         /** Adds a torque to the rigidbody.
          * @param torque Torque vector in world coordinates.
+         * @param mode Type of torque to apply.
          */
         AddTorque(torque: Vector3, mode: any): void
         /** Adds a torque to the rigidbody.
          * @param torque Torque vector in world coordinates.
+         * @param mode Type of torque to apply.
          */
         AddTorque(torque: Vector3): void
         /** Adds a torque to the rigidbody relative to its coordinate system.
          * @param x Size of torque along the local x-axis.
          * @param y Size of torque along the local y-axis.
          * @param z Size of torque along the local z-axis.
+         * @param mode Type of torque to apply.
          */
         AddRelativeTorque(x: number, y: number, z: number, mode: any): void
         /** Adds a torque to the rigidbody relative to its coordinate system.
          * @param x Size of torque along the local x-axis.
          * @param y Size of torque along the local y-axis.
          * @param z Size of torque along the local z-axis.
+         * @param mode Type of torque to apply.
          */
         AddRelativeTorque(x: number, y: number, z: number): void
         /** Adds a torque to the rigidbody relative to its coordinate system.
          * @param torque Torque vector in local coordinates.
+         * @param mode Type of torque to apply.
          */
         AddRelativeTorque(torque: Vector3, mode: any): void
         /** Adds a torque to the rigidbody relative to its coordinate system.
          * @param torque Torque vector in local coordinates.
+         * @param mode Type of torque to apply.
          */
         AddRelativeTorque(torque: Vector3): void
         /** Applies force at position. As a result this will apply a torque and force on the object.
          * @param force Force vector in world coordinates.
          * @param position Position in world coordinates.
+         * @param mode Type of force to apply.
          */
         AddForceAtPosition(force: Vector3, position: Vector3, mode: any): void
         /** Applies force at position. As a result this will apply a torque and force on the object.
          * @param force Force vector in world coordinates.
          * @param position Position in world coordinates.
+         * @param mode Type of force to apply.
          */
         AddForceAtPosition(force: Vector3, position: Vector3): void
         /** Applies a force to a rigidbody that simulates explosion effects.
@@ -7840,7 +7842,7 @@ declare module "UnityEngine" {
         /** The rotation of the inertia tensor.
          */
         inertiaTensorRotation: Quaternion
-        /** The diagonal inertia tensor of mass relative to the center of mass.
+        /** The inertia tensor of this body, defined as a diagonal matrix in a reference frame positioned at this body's center of mass and rotated by Rigidbody.inertiaTensorRotation.
          */
         inertiaTensor: Vector3
         /** Should collision detection be enabled? (By default always enabled).
@@ -7950,7 +7952,9 @@ declare module "QuickJS.Unity" {
         static LoadPrefs(filePath: jsb.Out<string>): Prefs
         static LoadPrefs(): Prefs
         static GetMonoScript(type: any): MonoScript
+        static SetDefineSymbol(defineItem: string, isAdding: boolean): void
         static IsReflectBindingSupported(): boolean
+        static Time(name: string, action: () => void): void
         static InvokeReflectBinding(): void
         static IsInMemoryBindingSupported(): boolean
         static InvokeInMemoryBinding(): void
@@ -10467,7 +10471,7 @@ declare module "UnityEngine" {
     }
 }
 declare module "UnityEngine" {
-    import { ValueType } from "System";
+    import { ValueType, Object as Object1 } from "System";
     /** A 2D Rectangle defined by x, y, width, height with integers.
      */
     class RectInt extends ValueType {
@@ -10504,6 +10508,7 @@ declare module "UnityEngine" {
         /** Returns true if the given RectInt is equal to this RectInt.
          */
         Equals(other: RectInt): boolean
+        Equals(obj: Object1): boolean
         /** Left coordinate of the rectangle.
          */
         x: number
@@ -11809,6 +11814,7 @@ declare module "UnityEditor" {
 declare module "UnityEditor" {
     import * as jsb from "jsb";
     import { Texture } from "UnityEngine";
+    import { Object } from "System";
     /** VideoClipImporter lets you modify Video.VideoClip import settings from Editor scripts.
      */
     @jsb.RequiredDefines("UNITY_EDITOR")
@@ -11861,6 +11867,7 @@ declare module "UnityEditor" {
          * @returns Returns true if the settings for both VideoClipImporters match. Returns false otherwise. 
          */
         Equals(rhs: VideoClipImporter): boolean
+        Equals(other: Object): boolean
         /** Size in bytes of the file before importing.
          */
         readonly sourceFileSize: number
@@ -12017,7 +12024,7 @@ declare module "UnityEditor" {
         /** Scaling mode for non power of two textures.
          */
         npotScale: TextureImporterNPOTScale
-        /** Set this to true if you want texture data to be readable from scripts. Set it to false to prevent scripts from reading texture data.
+        /** Whether Unity stores an additional copy of the imported texture's pixel data in CPU-addressable memory.
          */
         isReadable: boolean
         /** Enable mipmap streaming for this texture.
@@ -12701,9 +12708,6 @@ declare module "UnityEditor" {
         /** Removes the Unity Version number in the Archive File & Serialized File headers during the build.
          */
         AssetBundleStripUnityVersion = 32768,
-        /** Enable asset bundle protection.
-         */
-        EnableProtection = 65536,
     }
 }
 declare module "UnityEditor" {
@@ -12859,7 +12863,6 @@ declare module "UnityEditor" {
         /** Sets the Player to connect to the Editor.
          */
         ConnectToHost = 4096,
-        EnableInstantGame = 8192,
         /** Options for building the standalone player in headless mode.
          */
         EnableHeadlessMode = 16384,
@@ -14612,9 +14615,6 @@ declare module "UnityEditor" {
          * @returns Target platform name represented by the passed in BuildTarget. 
          */
         static GetBuildTargetName(targetPlatform: BuildTarget): string
-        /** SetAssetBundleEncryptKey.
-         */
-        static SetAssetBundleEncryptKey(password: string): void
         /** Checks if Unity can append the build.
          * @param target The BuildTarget to build.
          * @param location The path where Unity builds the application.
@@ -20684,6 +20684,20 @@ declare module "Example.New.World" {
         static GetName(): string
     }
 }
+declare module "Example.New.World" {
+    import { Object } from "System";
+    class IncompatibleOverloadTest1 extends Object {
+        constructor()
+        Test(): void
+    }
+}
+declare module "Example.New.World" {
+    class IncompatibleOverloadTest2 extends IncompatibleOverloadTest1 {
+        constructor()
+        Test(a: number): void
+        Test(): void
+    }
+}
 declare module "Example" {
     import { Object } from "System";
     namespace DelegateTest {
@@ -22040,7 +22054,6 @@ declare module "UnityEditor" {
         /** Enable the legacy fixed sample counts for baking Light Probes with Progressive Lightmapper.
          */
         static useLegacyProbeSampleCount: boolean
-        static useCloudEnlightenBake: boolean
         /** Determines whether cookies should be evaluated by the Progressive Lightmapper during Global Illumination calculations.
          */
         static enableCookiesInLightmapper: boolean
@@ -22205,6 +22218,14 @@ declare module "UnityEditor" {
         /** Build configuration set to Release for the generated Xcode project with optimization enabled.
          */
         Release = 1,
+    }
+}
+declare module "UnityEditor" {
+    import * as jsb from "jsb";
+    import { Enum } from "System";
+    enum SwitchRomCompressionType {
+        None = 0,
+        Lz4 = 1,
     }
 }
 declare module "UnityEditor" {
@@ -22376,6 +22397,11 @@ declare module "UnityEditor" {
          */
         static iOSBuildConfigType: iOSBuildType
         static switchCreateRomFile: boolean
+        static switchEnableRomCompression: boolean
+        static switchSaveADF: boolean
+        static switchRomCompressionType: SwitchRomCompressionType
+        static switchRomCompressionLevel: number
+        static switchRomCompressionConfig: string
         static switchNVNGraphicsDebugger: boolean
         static generateNintendoSwitchShaderInfo: boolean
         static switchNVNShaderDebugging: boolean
@@ -22498,7 +22524,7 @@ declare module "UnityEditor" {
 }
 declare module "UnityEditor" {
     import * as jsb from "jsb";
-    import { ValueType, Array } from "System";
+    import { ValueType, Array, Object as Object1 } from "System";
     import { Object } from "UnityEngine";
     /** Struct providing an API for stable, project-global object identifiers.
      */
@@ -22509,6 +22535,7 @@ declare module "UnityEditor" {
         /** Check equality between two GlobalObjectIds.
          */
         Equals(other: GlobalObjectId): boolean
+        Equals(obj: Object1): boolean
         /** Converts an Object reference or InstanceID to a GlobalObjectId.
          * @param targetObject The Object to be converted.
          * @param instanceId The InstanceID of the Object to be converted.
@@ -22892,7 +22919,7 @@ declare module "UnityEngine" {
         /** The raw bytes of the text asset. (Read Only)
          */
         readonly bytes: Array<jsb.byte>
-        /** The text contents of the .txt file as a string. (Read Only)
+        /** The text contents of the file as a string. (Read Only)
          */
         readonly text: string
     }
@@ -23376,16 +23403,6 @@ Note: calling this function will implicitly call Application.SetStackTraceLogTyp
          * @param normalMapEncoding The desired normal map encoding.
          */
         static SetNormalMapEncoding(platform: BuildTargetGroup, encoding: NormalMapEncoding): void
-        /**
-         * @param platform Platform to get the flag for.
-         * @returns Should the security build be used. 
-         */
-        static GetSecurityBuildForPlatform(platform: BuildTarget): boolean
-        /** Set the bool value to enable or disable the security build for target platform.
-         * @param platform The platform to use.
-         * @param securityBuild Should the security build be used?
-         */
-        static SetSecurityBuildForPlatform(platform: BuildTarget, securityBuild: boolean): void
         /** Returns the list of available icon slots for the specified platform and  PlatformIconKind|kind.
          * @param platform The full list of platforms that support this API and the supported icon kinds can be found in PlatformIconKind|icon kinds.
          * @param kind Each platform supports a different set of PlatformIconKind|icon kinds. These can be found in the specific platform namespace (for example iOSPlatformIconKind.
@@ -23536,8 +23553,6 @@ Note: calling this function will implicitly call Application.SetStackTraceLogTyp
          */
         static graphicsJobMode: GraphicsJobMode
         static readonly xboxPIXTextureCapture: boolean
-        /** Xbox 360 Avatars.
-         */
         static readonly xboxEnableAvatar: boolean
         static readonly xboxOneResolution: number
         /** Enables internal profiler.
@@ -23933,11 +23948,6 @@ declare module "UnityEditor" {
             static show: boolean
             static showUnityLogo: boolean
             static unityLogoStyle: PlayerSettings.SplashScreen.UnityLogoStyle
-            static showSplashAds: boolean
-            static adsAndroidGameId: string
-            static adsIosGameId: string
-            static showSplashAdsSlogan: boolean
-            static sloganHeight: number
         }
     }
 }
@@ -24054,6 +24064,8 @@ declare module "UnityEditor" {
             static useNewStyleFilepaths: boolean
             static switchUseMicroSleepForYield: boolean
             static switchMicroSleepForYieldTime: number
+            static switchEnableRamDiskSupport: boolean
+            static switchRamDiskSpaceSize: number
         }
     }
 }
@@ -24419,6 +24431,7 @@ declare module "UnityEditor" {
             static inputSource: PlayerSettings.WSAInputSource
             static supportStreamingInstall: boolean
             static lastRequiredScene: number
+            static vcxProjDefaultLanguage: string
             static packageVersion: any
             static readonly certificateNotAfter: jsb.Nullable<DateTime>
             static splashScreenBackgroundColor: jsb.Nullable<Color>
@@ -25246,7 +25259,11 @@ declare module "UnityEditor" {
         @jsb.RequiredDefines("UNITY_EDITOR")
         class Pass extends Object {
             HasShaderStage(shaderType: any): boolean
+            CompileVariant(shaderType: any, keywords: Array<string>, shaderCompilerPlatform: any, buildTarget: BuildTarget, platformKeywords: Array<any>, tier: any, forExternalTool: boolean): ShaderData.VariantCompileInfo
+            CompileVariant(shaderType: any, keywords: Array<string>, shaderCompilerPlatform: any, buildTarget: BuildTarget, tier: any, forExternalTool: boolean): ShaderData.VariantCompileInfo
+            CompileVariant(shaderType: any, keywords: Array<string>, shaderCompilerPlatform: any, buildTarget: BuildTarget, platformKeywords: Array<any>, forExternalTool: boolean): ShaderData.VariantCompileInfo
             CompileVariant(shaderType: any, keywords: Array<string>, shaderCompilerPlatform: any, buildTarget: BuildTarget, platformKeywords: Array<any>, tier: any): ShaderData.VariantCompileInfo
+            CompileVariant(shaderType: any, keywords: Array<string>, shaderCompilerPlatform: any, buildTarget: BuildTarget, forExternalTool: boolean): ShaderData.VariantCompileInfo
             CompileVariant(shaderType: any, keywords: Array<string>, shaderCompilerPlatform: any, buildTarget: BuildTarget, tier: any): ShaderData.VariantCompileInfo
             CompileVariant(shaderType: any, keywords: Array<string>, shaderCompilerPlatform: any, buildTarget: BuildTarget, platformKeywords: Array<any>): ShaderData.VariantCompileInfo
             CompileVariant(shaderType: any, keywords: Array<string>, shaderCompilerPlatform: any, buildTarget: BuildTarget): ShaderData.VariantCompileInfo
@@ -27471,7 +27488,7 @@ declare module "UnityEditor" {
         /** If enabled, objects sharing the same lightmap parameters will be packed into LightmapParameters.maxLightmapCount lightmaps.
          */
         limitLightmapCount: boolean
-        /** The maximum number of lightmaps that will be created for objects sharing the same lightmap parameters. This property is ignored if LightmapParameters.limitLightmapCount is false.
+        /** The maximum number of lightmaps created for objects sharing the same lightmap parameters. This property is ignored if LightmapParameters.limitLightmapCount is false.
          */
         maxLightmapCount: number
         /** The number of rays to cast for computing ambient occlusion.
@@ -32057,18 +32074,6 @@ declare module "UnityEditor.SearchService" {
 }
 declare module "UnityEditor.SearchService" {
     import * as jsb from "jsb";
-    // @jsb.RequiredDefines("UNITY_EDITOR")
-    interface ISearchEngine<T> extends ISearchEngineBase {
-    }
-}
-declare module "UnityEditor.SearchService" {
-    import * as jsb from "jsb";
-    // @jsb.RequiredDefines("UNITY_EDITOR")
-    interface IFilterEngine<T> extends ISearchEngineBase {
-    }
-}
-declare module "UnityEditor.SearchService" {
-    import * as jsb from "jsb";
     import { Object } from "UnityEngine";
     // @jsb.RequiredDefines("UNITY_EDITOR")
     interface ISelectorEngine extends ISearchEngineBase {
@@ -34818,10 +34823,11 @@ declare module "UnityEngine.UI" {
     }
 }
 declare module "UnityEngine.UI" {
-    import { ValueType } from "System";
+    import { ValueType, Object } from "System";
     class Navigation extends ValueType {
         constructor()
         Equals(other: Navigation): boolean
+        Equals(obj: Object): boolean
         mode: Navigation.Mode
         wrapAround: boolean
         selectOnUp: Selectable
@@ -34963,11 +34969,12 @@ declare module "UnityEngine.UI" {
     }
 }
 declare module "UnityEngine.UI" {
-    import { ValueType } from "System";
+    import { ValueType, Object } from "System";
     import { Sprite } from "UnityEngine";
     class SpriteState extends ValueType {
         constructor()
         Equals(other: SpriteState): boolean
+        Equals(obj: Object): boolean
         highlightedSprite: Sprite
         pressedSprite: Sprite
         selectedSprite: Sprite
@@ -35483,7 +35490,7 @@ declare module "UnityEngine.Events" {
          * @param call Callback function.
          */
         AddListener(call: () => void): void
-        /** Remove a non persistent listener from the UnityEvent.
+        /** Remove a non persistent listener from the UnityEvent. If you have added the same listener multiple times, this method will remove all occurrences of it.
          * @param call Callback function.
          */
         RemoveListener(call: () => void): void
