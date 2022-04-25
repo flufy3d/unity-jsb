@@ -5,10 +5,12 @@ using QuickJS.Utils;
 using QuickJS.IO;
 using QuickJS.Extra;
 using QuickJS.Unity;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Example
 {
-    using UnityEngine;
+
 
     // test
     public class Sample : MonoBehaviour
@@ -44,6 +46,12 @@ namespace Example
 
         private ScriptRuntime _rt;
         private MiniConsole _mConsole;
+
+        public void Reload()
+        {
+            Debug.Log("Reload!");
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
 
         void Awake()
         {
