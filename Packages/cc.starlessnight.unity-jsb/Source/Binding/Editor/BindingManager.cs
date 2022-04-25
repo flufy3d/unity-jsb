@@ -125,6 +125,9 @@ namespace QuickJS.Binding
             TransformType(typeof(string))
                 .SetMemberBlocked("Chars")
             ;
+            TransformType(typeof(UnityEngine.ScriptableObject))
+                .SetMemberBlocked("CreateAsset")
+            ;
 
             TransformType(typeof(Enum))
                 .AddTSMethodDeclaration("static GetValues<T>(enumType: any): Array<T>", "GetValue", typeof(Type))
